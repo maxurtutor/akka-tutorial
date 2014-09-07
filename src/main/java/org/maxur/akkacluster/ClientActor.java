@@ -4,6 +4,8 @@ import akka.actor.ActorSelection;
 import akka.actor.ActorSystem;
 import akka.actor.Props;
 import akka.actor.UntypedActor;
+import com.typesafe.config.Config;
+import com.typesafe.config.ConfigFactory;
 import org.perf4j.log4j.Log4JStopWatch;
 
 /**
@@ -15,15 +17,15 @@ public class ClientActor extends UntypedActor {
     private static ActorSystem system;
 
     public static void main(String[] args) throws Exception {
-        system = ActorSystem.create("ClientSystem");
+        final Config config = ConfigFactory.load().getConfig("client");
+        system = ActorSystem.create("ClientSystem", config);
         system.actorOf(Props.create(ClientActor.class));
-        system.actorOf(Props.create(WorkerActor.class), "worker");
-        Thread.sleep(21000);
     }
 
     @Override
     public void preStart() throws Exception {
-        final ActorSelection worker = system.actorSelection("/user/worker");
+        final String path = "akka.tcp://WorkerSystem@127.0.0.1:2552/user/worker";
+        final ActorSelection worker = system.actorSelection(path);
         for (int i = 0; i < 100; i++) {
             // Делаем что-то полезное
             final String source = doIt();

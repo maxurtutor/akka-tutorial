@@ -1,6 +1,10 @@
 package org.maxur.akkacluster;
 
+import akka.actor.ActorSystem;
+import akka.actor.Props;
 import akka.actor.UntypedActor;
+import com.typesafe.config.Config;
+import com.typesafe.config.ConfigFactory;
 
 import static akka.actor.ActorRef.noSender;
 import static java.lang.String.format;
@@ -12,7 +16,16 @@ import static java.lang.Thread.sleep;
  */
 public class WorkerActor extends UntypedActor {
 
+    private static ActorSystem system;
+
     private int count = 0;
+
+    public static void main(String[] args) throws Exception {
+        final Config config = ConfigFactory.load().getConfig("worker");
+        system = ActorSystem.create("WorkerSystem", config);
+        system.actorOf(Props.create(WorkerActor.class), "worker");
+
+    }
 
     @Override
     public void onReceive(Object message) throws Exception {
@@ -27,6 +40,7 @@ public class WorkerActor extends UntypedActor {
 
     @Override
     public void postStop() throws Exception {
+        system.shutdown();
     }
 
     private String doIt(String source) throws InterruptedException {
