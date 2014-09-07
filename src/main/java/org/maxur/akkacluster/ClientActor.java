@@ -40,7 +40,7 @@ public class ClientActor extends UntypedActor {
 
     @Override
     public void preStart() throws Exception {
-        final String path = "akka.tcp://WorkerSystem@127.0.0.1:2561/user/worker";
+        final String path = "akka.tcp://WorkerSystem@127.0.0.1:2561/user/frontend";
         final ActorSelection worker = context().system().actorSelection(path);
         for (int i = 0; i < 100; i++) {
             // Делаем что-то полезное

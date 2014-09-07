@@ -1,28 +1,20 @@
 package org.maxur.akkacluster;
 
+import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
 import akka.actor.Props;
 import akka.actor.UntypedActor;
+import akka.routing.FromConfig;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 
-import static akka.actor.ActorRef.noSender;
-import static java.lang.String.format;
-import static java.lang.Thread.sleep;
+public class FrontendActor extends UntypedActor {
 
-/**
- * @author Maxim Yunusov
- * @version 1.0 07.09.2014
- */
-public class WorkerActor extends UntypedActor {
-
-    private final String port;
-
-    private int count = 0;
+    private ActorRef router;
 
     public static void main(String[] args) throws Exception {
         if (args.length == 0)
-            startup(new String[]{"2561"});
+            startup(new String[]{"2561", "2562"});
         else
             startup(args);
     }
@@ -35,32 +27,23 @@ public class WorkerActor extends UntypedActor {
 
             ActorSystem system = ActorSystem.create("WorkerSystem", config);
             system.actorOf(Props.create(WorkerActor.class, port), "worker");
+            system.actorOf(Props.create(FrontendActor.class), "frontend");
         }
     }
 
-    public WorkerActor(String port) {
-        this.port = port;
-    }
-
     @Override
-    public void onReceive(Object message) throws Exception {
+    public void onReceive(final Object message) throws Exception {
         if (message instanceof String) {
-            final String source = (String) message;
-            sender().tell(doIt(source), noSender());
+            router.tell(message, sender());
         }
     }
 
     @Override
-    public void preStart() throws Exception {}
+    public void preStart() throws Exception {
+        router = context().actorOf(FromConfig.getInstance().props(), "router");
+    }
 
     @Override
     public void postStop() throws Exception {
-        context().system().shutdown();
     }
-
-    private String doIt(String source) throws InterruptedException {
-        sleep(100);
-        return format("%s:%s:%d", source, port, count++);
-    }
-
 }
