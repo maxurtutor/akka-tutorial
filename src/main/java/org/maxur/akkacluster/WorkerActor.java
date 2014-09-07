@@ -21,10 +21,21 @@ public class WorkerActor extends UntypedActor {
     private int count = 0;
 
     public static void main(String[] args) throws Exception {
-        final Config config = ConfigFactory.load().getConfig("worker");
-        system = ActorSystem.create("WorkerSystem", config);
-        system.actorOf(Props.create(WorkerActor.class), "worker");
+        if (args.length == 0)
+            startup(new String[]{"2561"});
+        else
+            startup(args);
+    }
 
+    private static void startup(String[] ports) {
+        for (String port : ports) {
+            final Config config = ConfigFactory
+                    .parseString("akka.remote.netty.tcp.port=" + port)
+                    .withFallback(ConfigFactory.load().getConfig("worker"));
+
+            ActorSystem system = ActorSystem.create("WorkerSystem", config);
+            system.actorOf(Props.create(WorkerActor.class), "worker");
+        }
     }
 
     @Override
