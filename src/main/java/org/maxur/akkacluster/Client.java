@@ -1,13 +1,15 @@
 package org.maxur.akkacluster;
 
 
-import akka.actor.ActorRef;
+import akka.actor.ActorSelection;
 import akka.actor.ActorSystem;
 import akka.actor.PoisonPill;
 import akka.actor.Props;
 import akka.actor.UntypedActor;
 import akka.event.Logging;
 import akka.event.LoggingAdapter;
+import com.typesafe.config.Config;
+import com.typesafe.config.ConfigFactory;
 import org.perf4j.log4j.Log4JStopWatch;
 
 import static akka.actor.ActorRef.noSender;
@@ -20,14 +22,16 @@ public class Client extends UntypedActor {
 
     private LoggingAdapter logger = Logging.getLogger(context().system(), this);
 
-    private ActorRef worker;
+    private ActorSelection worker;
+    private ActorSelection worker1;
 
     public static void main(String[] args) throws Exception {
         startSystem();
     }
 
     private static void startSystem() {
-        ActorSystem system = ActorSystem.create("ClientSystem");
+        final Config config = ConfigFactory.load().getConfig("client");
+        ActorSystem system = ActorSystem.create("ClientSystem", config);
         system.actorOf(Props.create(Client.class));
     }
 
@@ -43,7 +47,8 @@ public class Client extends UntypedActor {
     @Override
     public void preStart() {
         logger.info("Start Client");
-        worker = context().system().actorOf(Props.create(Worker.class), "worker");
+        final String path = "akka.tcp://WorkerSystem@127.0.0.1:2550/user/worker";
+        worker = context().system().actorSelection(path);
         run();
     }
 
