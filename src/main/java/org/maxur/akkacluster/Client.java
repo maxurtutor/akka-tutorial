@@ -11,8 +11,10 @@ import akka.event.LoggingAdapter;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 import org.perf4j.log4j.Log4JStopWatch;
+import scala.concurrent.duration.Duration;
 
 import static akka.actor.ActorRef.noSender;
+import static scala.concurrent.duration.Duration.Zero;
 
 /**
  * @author Maxim Yunusov
@@ -23,7 +25,6 @@ public class Client extends UntypedActor {
     private LoggingAdapter logger = Logging.getLogger(context().system(), this);
 
     private ActorSelection worker;
-    private ActorSelection worker1;
 
     public static void main(String[] args) throws Exception {
         startSystem();
@@ -37,6 +38,9 @@ public class Client extends UntypedActor {
 
     @Override
     public void onReceive(Object message) throws Exception {
+        if (message instanceof Start) {
+            worker.tell(makeRequest(), self());
+        }
         if (message instanceof String) {
             Log4JStopWatch stopWatch = new Log4JStopWatch("Client");
             System.out.println(message);
@@ -47,9 +51,17 @@ public class Client extends UntypedActor {
     @Override
     public void preStart() {
         logger.info("Start Client");
+        final ActorSystem system = context().system();
+        system.scheduler().schedule(
+                Zero(),
+                Duration.apply(100, "millisecond"),
+                self(),
+                new Start(),
+                system.dispatcher(),
+                noSender()
+        );
         final String path = "akka.tcp://ClusterSystem@127.0.0.1:2550/user/worker";
-        worker = context().system().actorSelection(path);
-        run();
+        worker = system.actorSelection(path);
     }
 
     @Override
@@ -59,17 +71,12 @@ public class Client extends UntypedActor {
         logger.info("Stop Client");
     }
 
-    private void run() {
-        try {
-            for (int i = 0; i < 100; i++) {
-                worker.tell(makeRequest(), self());
-            }
-        } catch (Exception e) {
-            logger.error(e.getMessage(), e);
-        }
-    }
 
     private String makeRequest() {
         return "Hello";
     }
+
+    private static class Start {
+    }
+
 }
