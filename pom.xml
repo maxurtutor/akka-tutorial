@@ -20,6 +20,7 @@
         <project.target.compile>1.8</project.target.compile>
 
         <slf4j.version>1.7.5</slf4j.version>
+        <akka.version>2.3.6</akka.version>
     </properties>
 
 
@@ -41,6 +42,13 @@
 
     <dependencyManagement>
         <dependencies>
+            <!-- Akka -->
+            <dependency>
+                <groupId>com.typesafe.akka</groupId>
+                <artifactId>akka-actor_2.11</artifactId>
+                <version>${akka.version}</version>
+            </dependency>
+
             <!-- Logging -->
             <dependency>
                 <groupId>org.slf4j</groupId>
@@ -78,6 +86,10 @@
     </dependencyManagement>
 
     <dependencies>
+        <dependency>
+            <groupId>com.typesafe.akka</groupId>
+            <artifactId>akka-actor_2.11</artifactId>
+        </dependency>
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
