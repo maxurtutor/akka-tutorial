@@ -7,6 +7,7 @@ import akka.actor.Props;
 import akka.actor.UntypedActor;
 import akka.event.Logging;
 import akka.event.LoggingAdapter;
+import akka.routing.FromConfig;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 
@@ -23,7 +24,7 @@ public class Worker extends UntypedActor {
 
     private int count = 0;
 
-    private ActorRef repository;
+    private ActorRef router;
 
     public static void main(String[] args) throws Exception {
         final Config config = ConfigFactory.load().getConfig("worker");
@@ -35,19 +36,19 @@ public class Worker extends UntypedActor {
     public void onReceive(Object message) throws Exception {
         if (message instanceof String) {
             final String response = format("%d: %s", count++, message);
-            repository.tell(response, sender());
+            router.tell(response, sender());
         }
     }
 
     @Override
     public void preStart() throws Exception {
         logger.info("Start Worker");
-        repository = context().actorOf(Props.create(Repository.class));
+        router = context().actorOf(FromConfig.getInstance().props(), "router");
     }
 
     @Override
     public void postStop() throws Exception {
-        repository.tell(PoisonPill.getInstance(), noSender());
+        router.tell(PoisonPill.getInstance(), noSender());
         logger.info("Stop Worker");
     }
 
