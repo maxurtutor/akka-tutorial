@@ -9,7 +9,6 @@ import akka.actor.UntypedActor;
 import akka.contrib.pattern.ClusterReceptionistExtension;
 import akka.event.Logging;
 import akka.event.LoggingAdapter;
-import akka.routing.ConsistentHashingRouter.ConsistentHashableEnvelope;
 import akka.routing.FromConfig;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
@@ -44,12 +43,13 @@ public class Worker extends UntypedActor {
     public void onReceive(Object message) throws Exception {
         if (message instanceof String) {
             router.tell(response(message), sender());
+        } else {
+            unhandled(message);
         }
     }
 
-    private ConsistentHashableEnvelope response(Object message) {
-        final String response = format("%d: %s", count++, message);
-        return new ConsistentHashableEnvelope(response, response);
+    private Object response(Object message) {
+        return format("%d: %s", count++, message);
     }
 
     @Override

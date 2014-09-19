@@ -54,6 +54,8 @@ public class Repository extends UntypedActor {
         if (message instanceof String) {
             save(message.toString());
             sender.tell(format("%s (%s)", message, port), sender());
+        } else {
+            unhandled(message);
         }
     }
 
