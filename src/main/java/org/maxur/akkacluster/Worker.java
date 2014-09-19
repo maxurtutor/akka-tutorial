@@ -2,11 +2,14 @@ package org.maxur.akkacluster;
 
 import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
+import akka.actor.ExtendedActorSystem;
 import akka.actor.PoisonPill;
 import akka.actor.Props;
 import akka.actor.UntypedActor;
+import akka.contrib.pattern.ClusterReceptionistExtension;
 import akka.event.Logging;
 import akka.event.LoggingAdapter;
+import akka.routing.ConsistentHashingRouter.ConsistentHashableEnvelope;
 import akka.routing.FromConfig;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
@@ -28,22 +31,31 @@ public class Worker extends UntypedActor {
 
     public static void main(String[] args) throws Exception {
         final Config config = ConfigFactory.load().getConfig("worker");
-        ActorSystem system = ActorSystem.create("WorkerSystem", config);
-        system.actorOf(Props.create(Worker.class), "worker");
+        ActorSystem system = ExtendedActorSystem.create("ClusterSystem", config);
+        final ActorRef worker = system.actorOf(Props.create(Worker.class), "worker");
+
+        final ClusterReceptionistExtension receptionist = ClusterReceptionistExtension.get(system);
+        receptionist.registerService(worker);
+
+        system.actorOf(Props.create(SimpleClusterListener.class));
     }
 
     @Override
     public void onReceive(Object message) throws Exception {
         if (message instanceof String) {
-            final String response = format("%d: %s", count++, message);
-            router.tell(response, sender());
+            router.tell(response(message), sender());
         }
+    }
+
+    private ConsistentHashableEnvelope response(Object message) {
+        final String response = format("%d: %s", count++, message);
+        return new ConsistentHashableEnvelope(response, response);
     }
 
     @Override
     public void preStart() throws Exception {
         logger.info("Start Worker");
-        router = context().actorOf(FromConfig.getInstance().props(), "router");
+        router = context().actorOf(FromConfig.getInstance().props(Props.empty()), "router");
     }
 
     @Override

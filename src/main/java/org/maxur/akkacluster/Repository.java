@@ -2,6 +2,7 @@ package org.maxur.akkacluster;
 
 import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
+import akka.actor.ExtendedActorSystem;
 import akka.actor.Props;
 import akka.actor.UntypedActor;
 import akka.event.Logging;
@@ -37,8 +38,10 @@ public class Repository extends UntypedActor {
                     .parseString("akka.remote.netty.tcp.port=" + port)
                     .withFallback(ConfigFactory.load().getConfig("repository"));
 
-            ActorSystem system = ActorSystem.create("RepositorySystem", config);
+            ActorSystem system = ExtendedActorSystem.create("ClusterSystem", config);
             system.actorOf(Props.create(Repository.class, port), "repository");
+
+            system.actorOf(Props.create(SimpleClusterListener.class));
         }
     }
 
