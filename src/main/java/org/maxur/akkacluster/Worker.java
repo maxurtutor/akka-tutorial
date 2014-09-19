@@ -7,6 +7,8 @@ import akka.actor.Props;
 import akka.actor.UntypedActor;
 import akka.event.Logging;
 import akka.event.LoggingAdapter;
+import com.typesafe.config.Config;
+import com.typesafe.config.ConfigFactory;
 
 import static akka.actor.ActorRef.noSender;
 import static java.lang.String.format;
@@ -24,8 +26,9 @@ public class Worker extends UntypedActor {
     private ActorRef repository;
 
     public static void main(String[] args) throws Exception {
-        ActorSystem system = ActorSystem.create("WorkerSystem");
-        system.actorOf(Props.create(Worker.class));
+        final Config config = ConfigFactory.load().getConfig("worker");
+        ActorSystem system = ActorSystem.create("WorkerSystem", config);
+        system.actorOf(Props.create(Worker.class), "worker");
     }
 
     @Override
